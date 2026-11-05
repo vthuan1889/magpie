@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/charmbracelet/lipgloss"
@@ -25,6 +26,8 @@ const groupUsage = `usage:
                                           a name in use replaces that group
   magpie group set <id> k=v…              change one: name, models (the whole list, in order, patterns too),
                                           models+=<m>[,m2…] (append), models-=<m>[,m2…] (drop), routing, stays,
+                                          cold (how long a member's vendor is trusted to keep the conversation
+                                          cached, in place of its own guess: 48h; empty for the vendor's own),
                                           context (how long a request agents are told it takes: 272k; smallest
                                           is its smallest model's; empty is its largest model's), levels (the reasoning levels agents are offered:
                                           levels=none,low,medium,high,xhigh,max; empty is those every model has —
@@ -107,6 +110,12 @@ const groupUsage = `usage:
            off     every request routed afresh
            strict  for the whole session and never moved: resting, used up or past its cap, the
                    account that answered is still asked and its error goes to the agent
+  cold     auto    (default) the vendor's own guess: five minutes, an hour for DeepSeek's own
+                   API and ChatGPT accounts
+           48h     keep a conversation with the member that answered it for that long, for a
+                   vendor whose cache outlives the guess (a relay in front of DeepSeek); another
+                   vendor's cache is elsewhere, so a move pays the whole conversation again.
+                   Stays: auto only
   effort   agent   (default) each request reasons as much as the agent asked, but at a member's own :<effort>
            auto    as a turn begins, the group's classifier — Jev, from a TypeSafe provider
                    (magpie provider add typesafe key=…), or any model, as Jev Router on OpenRouter,
@@ -190,6 +199,44 @@ func parseStays(v string) (string, error) {
 		names = append(names, s.name)
 	}
 	return "", fmt.Errorf("stays %q is not one magpie has: %s", v, strings.Join(names, ", "))
+}
+
+// coldArg reads cold=: auto (or 0) for the vendor's own guess, or a time up
+// to provider.ColdLongest, as 48h, 90m or a number of seconds.
+func coldArg(v string) (int, error) {
+	v = strings.ToLower(strings.TrimSpace(v))
+	switch v {
+	case "", "0", "auto", "vendor", "default":
+		return 0, nil
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		n, nerr := strconv.Atoi(v)
+		if nerr != nil {
+			return 0, fmt.Errorf("cold=auto|<time, e.g. 48h>, not %q", v)
+		}
+		d = time.Duration(n) * time.Second
+	}
+	if d < 0 || d > provider.ColdLongest*time.Second {
+		return 0, fmt.Errorf("cold is at most %s, not %q", leadWords(provider.ColdLongest*time.Second), v)
+	}
+	if d == 0 {
+		return 0, nil
+	}
+	return int((d + time.Second - 1) / time.Second), nil
+}
+
+// coldWords says a cold as 48h, 90m or 45s.
+func coldWords(d time.Duration) string {
+	switch {
+	case d%time.Hour == 0:
+		return strconv.Itoa(int(d/time.Hour)) + "h"
+	case d > time.Hour:
+		return leadWords(d)
+	case d%time.Minute == 0:
+		return strconv.Itoa(int(d/time.Minute)) + "m"
+	}
+	return d.String()
 }
 
 // routingName is what the CLI calls routing v: a plugin's, or one it
@@ -483,6 +530,10 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 			g.Routing, err = parseRouting(v)
 		case "stays", "stay", "affinity":
 			g.Affinity, err = parseStays(v)
+		case "cold", "cache":
+			// how long a member's vendor is trusted to keep the
+			// conversation cached, in place of its own guess
+			g.Cold, err = coldArg(v)
 		case "context":
 			// what agents are told the group takes; empty or 0 is its
 			// largest model's again
@@ -1160,6 +1211,9 @@ func showGroup(g provider.Group) error {
 		kv("routing", routingName(g.Routing))
 	}
 	kv("stays", staysName(g.Affinity))
+	if g.Cold > 0 {
+		kv("cold", coldWords(g.ColdFor())+muted.Render("  its members' caches trusted that long, in place of the vendor's own"))
+	}
 	if g.Unlists {
 		kv("listed", "no"+muted.Render("  its models are offered through the group alone; listed=yes lists them too"))
 	}

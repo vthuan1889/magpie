@@ -137,6 +137,19 @@ func TestApplyGroupPairs(t *testing.T) {
 			t.Errorf("context=%s: %d %v", c.v, g.Context, err)
 		}
 	}
+	for _, c := range []struct {
+		v    string
+		want int
+	}{{"48h", 48 * 60 * 60}, {"90m", 90 * 60}, {"0", 0}, {"auto", 0}, {"172800", 172800}} {
+		if err := applyGroupPairs(&g, []string{"cold=" + c.v}, resolve, false); err != nil || g.Cold != c.want {
+			t.Errorf("cold=%s: %d %v", c.v, g.Cold, err)
+		}
+	}
+	for _, bad := range []string{"cold=lots", "cold=721h"} {
+		if _, err := coldArg(bad); err == nil {
+			t.Errorf("%s: no error", bad)
+		}
+	}
 	// listed=no: its models offered through the group alone (#1783)
 	if err := applyGroupPairs(&g, []string{"listed=no"}, resolve, false); err != nil || !g.Unlists {
 		t.Fatalf("listed=no: %v %v", g.Unlists, err)

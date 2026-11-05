@@ -77,6 +77,9 @@ const (
 	cacheHour = time.Hour
 	// stickKeep is how long a conversation's last answerer is remembered.
 	stickKeep = 24 * time.Hour
+	// stickKeepLongest is how long one is kept on disk: a group may trust
+	// its vendors' caches for as long as ColdLongest (Group.Cold).
+	stickKeepLongest = provider.ColdLongest * time.Second
 	// sticksKept is how many conversations, the latest, are kept on disk.
 	sticksKept = 512
 )
@@ -92,6 +95,17 @@ func coldAfter(p provider.Provider) time.Duration {
 		return deepseekCold
 	}
 	return cacheCold
+}
+
+// coldOf is how long the member that answered may keep the conversation
+// for its vendor's cache: the group's Cold when it set one (a vendor whose
+// cache outlives magpie's guess, or a relay in front of it), the vendor's
+// own otherwise.
+func coldOf(p provider.Provider, groupCold time.Duration) time.Duration {
+	if groupCold > 0 {
+		return groupCold
+	}
+	return coldAfter(p)
 }
 
 // Affinity is what the trace tells of a request's conversation and whether
@@ -304,7 +318,7 @@ func stickOf(key string) (stick, bool) {
 		return stick{}, false
 	}
 	for k, v := range saved {
-		if time.Since(v.At) > stickKeep || v.Who == "" {
+		if time.Since(v.At) > stickKeepLongest || v.Who == "" {
 			continue
 		}
 		if st, ok := sticks.m[k]; ok && !st.at.Before(v.At) {
@@ -335,7 +349,7 @@ func saveSticks() {
 	var ks []kept
 	sticks.Lock()
 	for k, st := range sticks.m {
-		if now.Sub(st.at) <= stickKeep {
+		if now.Sub(st.at) <= stickKeepLongest {
 			ks = append(ks, kept{k, savedStick{st.rest, st.who, st.model, st.effort, st.turn, st.at, st.cacheRead, st.cacheWrite, st.hour.tokens, st.hour.at, st.stoodIn}})
 		}
 	}
@@ -430,14 +444,14 @@ func turnIn(req *Request) (turn int, within bool) {
 // isn't brought back, the user's own setting, and the conversation doesn't
 // move either: held is it, for the request to be refused as held. Neither
 // for another mode, nor for a conversation nobody has answered yet.
-func strictKeep(scope, mode string, in http.Header, body []byte, cs []candidate, pl planned) ([]candidate, planned, []Weighed) {
+func strictKeep(scope, mode string, in http.Header, body []byte, groupCold time.Duration, cs []candidate, pl planned) ([]candidate, planned, []Weighed) {
 	if mode != provider.AffinityStrict {
 		return cs, pl, nil
 	}
 	sticks.Lock()
 	st, had := stickOf(stickKey(scope, in, body))
 	sticks.Unlock()
-	if !had || time.Since(st.at) > stickKeep || slices.ContainsFunc(cs, func(c candidate) bool { return c.sameVendor(st.who, st.model) }) {
+	if !had || time.Since(st.at) > max(stickKeep, groupCold) || slices.ContainsFunc(cs, func(c candidate) bool { return c.sameVendor(st.who, st.model) }) {
 		return cs, pl, nil
 	}
 	// the left's line for c, as it was left out
@@ -536,14 +550,14 @@ func stickKey(scope string, in http.Header, body []byte) string {
 // it in the masked body parsed the conversation a second time, ~27 MB
 // more for each 4 MB Codex request in flight. inOrder: the request is to
 // a routing group set to In order, whose order the user chose (backToFirst).
-func affine(scope, mode string, rotate, spread, inOrder bool, in http.Header, from provider.Protocol, body, written []byte, cs []candidate, pl planned) ([]candidate, planned, *Affinity, string) {
+func affine(scope, mode string, rotate, spread, inOrder bool, groupCold time.Duration, in http.Header, from provider.Protocol, body, written []byte, cs []candidate, pl planned) ([]candidate, planned, *Affinity, string) {
 	key := stickKey(scope, in, body)
 	a := &Affinity{Mode: mode}
 	a.Turn, a.Within = turnOf(from, written)
 	sticks.Lock()
 	st, had := stickOf(key)
 	sticks.Unlock()
-	if had && time.Since(st.at) > stickKeep {
+	if had && time.Since(st.at) > max(stickKeep, groupCold) {
 		had = false
 	}
 	if had {
@@ -656,7 +670,7 @@ func affine(scope, mode string, rotate, spread, inOrder bool, in http.Header, fr
 		// what it wrote counts with what it read: the cache a first turn
 		// built is there for the next to read
 		a.Why = "no-cache"
-	case time.Since(st.at) > coldAfter(cs[at].p) && !st.hour.warm(time.Now()):
+	case time.Since(st.at) > coldOf(cs[at].p, groupCold) && !st.hour.warm(time.Now()):
 		// past what the vendor keeps unread (five minutes, longer at
 		// the ChatGPT backend), kept still where the vendor said it
 		// keeps enough for an hour (#2302)
@@ -986,7 +1000,7 @@ func answeredStanding(key string, c candidate, turn int, u Usage, stoodIn bool) 
 	delete(sticks.opening, key)
 	if len(sticks.m) > 4096 {
 		for k, st := range sticks.m {
-			if now.Sub(st.at) > stickKeep {
+			if now.Sub(st.at) > stickKeepLongest {
 				delete(sticks.m, k)
 			}
 		}

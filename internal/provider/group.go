@@ -146,6 +146,9 @@ const (
 	PatienceOff     = -1
 	PatienceDefault = 60
 	PatienceLongest = 240
+	// ColdLongest is the most a group keeps a conversation on the member
+	// that answered it for its vendor's cache, in seconds: a month.
+	ColdLongest = 30 * 24 * 60 * 60
 )
 
 // Waits is how long a request to the group may be kept for its members to
@@ -158,6 +161,16 @@ func (g Group) Waits() time.Duration {
 		return PatienceDefault * time.Second
 	}
 	return time.Duration(min(g.Patience, PatienceLongest)) * time.Second
+}
+
+// ColdFor is how long a conversation routed by the group stays with the
+// member that answered it, for that member's vendor to keep its prompt
+// cached: g.Cold, or 0 for the vendor's own (coldAfter in the gateway).
+func (g Group) ColdFor() time.Duration {
+	if g.Cold <= 0 {
+		return 0
+	}
+	return time.Duration(min(g.Cold, ColdLongest)) * time.Second
 }
 
 // ContextSmallest is a group's Context when agents are told the window of
@@ -188,6 +201,14 @@ type Group struct {
 	Placed   []string `json:"placed,omitempty"`
 	Routing  string   `json:"routing,omitempty"`  // as Provider.Routing, over all the members' keys and accounts; or Manual
 	Affinity string   `json:"affinity,omitempty"` // as Provider.Affinity
+	// Cold is how many seconds a conversation routed by the group stays
+	// with the member that answered it while that vendor is thought to
+	// still keep its prompt cached, overriding the vendor's own guess
+	// (coldAfter in the gateway): another vendor's cache is elsewhere, so
+	// a move pays the whole conversation again. 0, the default, keeps the
+	// vendor's own. Stays: auto alone reads it; session, turn, off and
+	// strict decide for themselves.
+	Cold int `json:"cold,omitempty"`
 	// Sink is Provider.Sink over the group's members' accounts and keys
 	// together: one rate limited with quota left goes behind every other
 	// member's. Not for "rotate" or Manual.
@@ -1495,6 +1516,10 @@ func SaveGroup(g Group) error {
 		g.Patience = PatienceOff
 	}
 	g.Patience = min(g.Patience, PatienceLongest)
+	if g.Cold < 0 {
+		g.Cold = 0
+	}
+	g.Cold = min(g.Cold, ColdLongest)
 	if g.Context < 0 {
 		g.Context = ContextSmallest
 	}

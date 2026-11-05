@@ -4,6 +4,7 @@
 // works. {name} slots are filled by t(str, vars).
 const I18N = {
   zh: {
+    "The vendor's own": "服务商自己的",
     "Collapse all": "全部收起",
     "Expand all": "全部展开",
     "Found by magpie: {url}": "magpie 自动找到：{url}",
@@ -4637,6 +4638,7 @@ const I18N = {
     "This report is no longer kept: magpie keeps the last 5.": "这份报告已经不在了：magpie 只保留最近 5 份。",
   },
   "zh-TW": {
+    "The vendor's own": "廠商自己的",
     "Collapse all": "全部收起",
     "Expand all": "全部展開",
     "Found by magpie: {url}": "magpie 自動找到：{url}",
@@ -9255,6 +9257,7 @@ const I18N = {
     "This report is no longer kept: magpie keeps the last 5.": "這份報告已經不在了：magpie 只保留最近 5 份。",
   },
   ja: {
+    "The vendor's own": "ベンダー既定",
     "Collapse all": "すべて折りたたむ",
     "Expand all": "すべて展開",
     "Found by magpie: {url}": "magpie が自動で見つけました：{url}",
@@ -13875,6 +13878,7 @@ const I18N = {
     "This report is no longer kept: magpie keeps the last 5.": "このレポートはもう残っていません。magpie は最新の 5 件だけを保存します。",
   },
   de: {
+    "The vendor's own": "Des Anbieters eigene",
     "Collapse all": "Alle einklappen",
     "Expand all": "Alle ausklappen",
     "Found by magpie: {url}": "Von magpie gefunden: {url}",

@@ -2,6 +2,9 @@
 // kernel adds them to i18n.js's (magpie.strings).
 magpie.strings({
   zh: {
+    "Cache cold": "缓存时限",
+    "A conversation stays with the member that answered it for {n} after its last answer, as long as that vendor keeps its prompt cached: another vendor's cache is elsewhere, so a move sends the whole conversation again.": "对话会留在最后作答的成员上 {n}，只要该服务商仍缓存着它的提示：别家服务商的缓存不在那里，转移会把整段对话重新发送一遍。",
+    "A conversation stays with the member that answered it while its vendor's cache is worth keeping: five minutes, an hour for DeepSeek's own API and ChatGPT accounts. Name a longer time for a vendor whose cache outlives that.": "对话留在最后作答的成员上，直到其服务商的缓存不再值得保留：即五分钟，DeepSeek 自家 API 与 ChatGPT 账号为一小时。若某服务商的缓存更久，可指定更长的时间。",
     "sign-in refused (answered since)": "登录曾被拒（之后已应答）",
     "Free first uses it before paid ones, and Cheapest first counts it as costing nothing": "免费优先会先用它再用付费的，最便宜优先把它算作不花钱",
     "{name}, {n} accounts: {windows}": "{name}（{n} 个账号）：{windows}",
@@ -668,6 +671,9 @@ magpie.strings({
     "This group may spend every account of {provider}": "这个组可以消耗 {provider} 的每个账号",
   },
   "zh-TW": {
+    "Cache cold": "快取時限",
+    "A conversation stays with the member that answered it for {n} after its last answer, as long as that vendor keeps its prompt cached: another vendor's cache is elsewhere, so a move sends the whole conversation again.": "對話會留在最後作答的成員上 {n}，只要該廠商仍快取著它的提示：別家廠商的快取不在那裡，轉移會把整段對話重新送出一次。",
+    "A conversation stays with the member that answered it while its vendor's cache is worth keeping: five minutes, an hour for DeepSeek's own API and ChatGPT accounts. Name a longer time for a vendor whose cache outlives that.": "對話留在最後作答的成員上，直到其廠商的快取不再值得保留：即五分鐘，DeepSeek 自家 API 與 ChatGPT 帳號為一小時。若某廠商的快取更久，可指定更長的時間。",
     "sign-in refused (answered since)": "登入曾被拒（之後已應答）",
     "Free first uses it before paid ones, and Cheapest first counts it as costing nothing": "免費優先會先用它再用付費的，最便宜優先把它算作不花錢",
     "{name}, {n} accounts: {windows}": "{name}（{n} 個帳號）：{windows}",
@@ -1334,6 +1340,9 @@ magpie.strings({
     "This group may spend every account of {provider}": "這個組可以消耗 {provider} 的每個帳號",
   },
   ja: {
+    "Cache cold": "キャッシュ保持",
+    "A conversation stays with the member that answered it for {n} after its last answer, as long as that vendor keeps its prompt cached: another vendor's cache is elsewhere, so a move sends the whole conversation again.": "会話は、そのベンダーがプロンプトをキャッシュしている間、最後に応答したメンバーに {n} 留まります。別ベンダーのキャッシュは別の場所にあるため、移動すると会話全体を送り直すことになります。",
+    "A conversation stays with the member that answered it while its vendor's cache is worth keeping: five minutes, an hour for DeepSeek's own API and ChatGPT accounts. Name a longer time for a vendor whose cache outlives that.": "会話は、ベンダーがキャッシュを保持している間、最後に応答したメンバーに留まります。既定は 5 分、DeepSeek 自身の API と ChatGPT アカウントは 1 時間です。ベンダーのキャッシュがそれより長く残る場合は、より長い時間を指定してください。",
     "sign-in refused (answered since)": "サインイン拒否（その後は応答あり）",
     "Free first uses it before paid ones, and Cheapest first counts it as costing nothing": "無料優先は有料より先にこれを使い、最安優先はこれを費用ゼロとして数えます",
     "{name}, {n} accounts: {windows}": "{name}（{n} アカウント）：{windows}",
@@ -2000,6 +2009,9 @@ magpie.strings({
     "This group may spend every account of {provider}": "このグループは {provider} のすべてのアカウントを使えます",
   },
   de: {
+    "Cache cold": "Cache-Dauer",
+    "A conversation stays with the member that answered it for {n} after its last answer, as long as that vendor keeps its prompt cached: another vendor's cache is elsewhere, so a move sends the whole conversation again.": "Eine Unterhaltung bleibt {n} beim Mitglied, das sie zuletzt beantwortet hat, solange dieser Anbieter den Prompt im Cache hält: Der Cache eines anderen Anbieters liegt woanders, ein Wechsel sendet die ganze Unterhaltung erneut.",
+    "A conversation stays with the member that answered it while its vendor's cache is worth keeping: five minutes, an hour for DeepSeek's own API and ChatGPT accounts. Name a longer time for a vendor whose cache outlives that.": "Eine Unterhaltung bleibt beim Mitglied, das sie beantwortet hat, solange der Cache seines Anbieters es wert ist: fünf Minuten, eine Stunde bei DeepSeeks eigener API und ChatGPT-Konten. Für einen Anbieter, dessen Cache länger hält, lässt sich eine längere Zeit angeben.",
     "sign-in refused (answered since)": "Anmeldung abgelehnt (seitdem beantwortet)",
     "Free first uses it before paid ones, and Cheapest first counts it as costing nothing": "„Kostenlos zuerst“ nutzt es vor bezahlten, „Günstigste zuerst“ zählt es als kostenlos",
     "{name}, {n} accounts: {windows}": "{name}, {n} Konten: {windows}",
